@@ -11,18 +11,14 @@ defmodule Follower.Supervisor do
     #    {:ok, queue} = Follower.TaskQueue.start_link
     login_user = case HTTPoison.get(config[:github_api] <> "/user", headers) do
                    {:ok, %{body: userJson}} ->
-                     user_login = Poison.decode!(userJson)["login"]
+                     Poison.decode!(userJson)["login"]
                    {:error, reason} ->
                      IO.inspect reason
-                     false
+                     raise "error courred for getting your github information"
                  end
 
-    following_users = cond do
-      login_user ->
-        IO.puts "login_user"
-        {:ok, %{body: following_json}} = HTTPoison.get(config[:github_api] <> "/users/#{login_user}/following")
-        following_users = Poison.decode!(following_json)
-      true -> []
+     {:ok, %{body: following_json}} = HTTPoison.get(config[:github_api] <> "/users/#{login_user}/following")
+     following_users = Poison.decode!(following_json)
     end
 
     children = [
