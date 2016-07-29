@@ -8,22 +8,22 @@ defmodule Follower.Spy do
         IO.inspect msg
     end
   end
-  
+
   def spy(users, config, headers) do
-    Enum.each(users, fn(user) -> 
-      spawn fn -> 
+    Enum.each(users, fn(user) ->
+      spawn fn ->
         IO.puts user["login"]
-        Follower.Worker.follow_user(user, config, headers)
+        true = Follower.Worker.follow_user(user, config, headers)
         #Follower.TaskQueue.put_task(queue, user["login"])
         user_login = user["login"]
         {:ok, %{body: following_users}} = HTTPoison.get(config[:github_api] <> "/users/#{user_login}/following", headers)
-        spawn fn -> 
+        spawn fn ->
           spy( Poison.decode!(following_users), config, headers)
         end
-        
+
       end
     end
     )
   end
-  
+
 end
