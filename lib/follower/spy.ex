@@ -1,29 +1,21 @@
-defmodule Follower.Spy do
+defmodule Follower.Spy.Worker do
 
-  def start_link(users, config) do
-    headers = [{"Authorization", "token " <> config[:github_token]}]
-    spy(users, config, headers)
+  def start_link(following_users, config, header) do
+    spy(following_users, config, header)
     receive do
-      msg ->
-        IO.inspect msg
+      :stop -> :ok
     end
   end
 
-  def spy(users, config, headers) do
-    Enum.each(users, fn(user) ->
+  def spy(users, config, header) do
+    Enum.each users, fn user ->
       spawn fn ->
         IO.puts user["login"]
-        true = Follower.Worker.follow_user(user, config, headers)
-        #Follower.TaskQueue.put_task(queue, user["login"])
+        true = spawn(Follower.Worker, :follow_user, [user, config, header])
         user_login = user["login"]
-        {:ok, %{body: following_users}} = HTTPoison.get(config[:github_api] <> "/users/#{user_login}/following", headers)
-        spawn fn ->
-          spy( Poison.decode!(following_users), config, headers)
-        end
-
+        {:ok, %{body: following_users}} = HTTPoison.get(config[:github_api] <> "/users/#{user_login}/following", header)
+        Supervisor.start_child(Follower.Supervisor, [following_users, config, header])
       end
     end
-    )
   end
-
 end
