@@ -9,7 +9,7 @@ defmodule Follower do
     import Supervisor.Spec
 
     user_information = get_user_information
-    worker_spec = worker(Follow.Spy.Worker, [user_information.following_users, user_information.config, user_information.header])
+    worker_spec = worker(Follower.Spy.Worker, [user_information.following_users, user_information.config, user_information.header], [restart: :transient])
     Supervisor.start_child(Follower.Supervisor, worker_spec)
   end
 
